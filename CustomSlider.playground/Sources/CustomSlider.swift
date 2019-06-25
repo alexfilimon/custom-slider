@@ -8,17 +8,21 @@ final public class CustomSlider: UIControl {
         // track
         static let trackHeight: CGFloat = 20
         static let trackTopOffset: CGFloat = 40
-        static let trackHorizontalOffset: CGFloat = 20
+        static let trackHorizontalOffset: CGFloat = 40
 
         // labels
         static let labelFontSize: CGFloat = 20
         static let labelFont: UIFont = UIFont.systemFont(ofSize: 20)
-        static let labelFromTrackTopOffset: CGFloat = 30
+        static let labelFromTrackTopOffset: CGFloat = 50
 
         // points
         static let smallPointSize: CGFloat = 20
         static let bigPointSize: CGFloat = 24
         static let smallPointOpacity: Float = 0.1
+
+        // thumb
+        static let thumbSize = CGSize(width: 70, height: 81)
+        static let thumbImageDyOffset: CGFloat = 11
     }
 
     // MARK: - Readonly properties
@@ -36,7 +40,9 @@ final public class CustomSlider: UIControl {
     }
     private var points: [Int: (bigPoint: CAShapeLayer, smallPoint: CAShapeLayer)] = [:]
     private var labels: [Int: CATextLayer] = [:]
+    private var thumbImage = UIImage(named: "Group 6.png")
     private var trackLayer = CustomSliderTrackLayer()
+    private let thumbImageView = UIImageView()
 
     // MARK: - Initialization
 
@@ -81,9 +87,10 @@ final public class CustomSlider: UIControl {
 
     public func configure(with values: [Int]) {
         self.values = values
+        self.value = minValue
         configurePoints()
         configureLabels()
-        updateLayerFrames()
+        thumbImageView.frame = updatedThumbFrame()
     }
 
     // MARK: - Private methods
@@ -97,6 +104,10 @@ final public class CustomSlider: UIControl {
         configurePoints()
         configureLabels()
 
+        thumbImageView.image = thumbImage
+        thumbImageView.contentMode = .center
+        addSubview(thumbImageView)
+
         updateLayerFrames()
     }
 
@@ -108,6 +119,9 @@ final public class CustomSlider: UIControl {
         )
         trackLayer.frame = CGRect(origin: trackOrigin(), size: trackSize)
         trackLayer.setNeedsDisplay()
+
+        // thumb image
+        thumbImageView.frame = updatedThumbFrame()
 
         // points
         drawPoints()
@@ -121,7 +135,24 @@ final public class CustomSlider: UIControl {
     }
 
     private func animateChanging() {
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(GlobalConstants.animationDuration)
+        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+
+        // animate track
         trackLayer.percentage = percentage(for: value)
+
+        // animate thumb frame
+        let frameAnimation = CABasicAnimation(keyPath: #keyPath(CALayer.position))
+        let oldFrame = thumbImageView.layer.presentation()?.frame ?? .zero
+        let newFrame = updatedThumbFrame()
+        frameAnimation.fromValue = CGPoint(x: oldFrame.midX, y: oldFrame.midY)
+        frameAnimation.toValue = CGPoint(x: newFrame.midX, y: newFrame.midY)
+        thumbImageView.layer.removeAllAnimations()
+        thumbImageView.layer.add(frameAnimation, forKey: #keyPath(CALayer.position))
+        thumbImageView.frame = newFrame
+
+        CATransaction.commit()
     }
 
     private func trackOrigin() -> CGPoint {
@@ -170,6 +201,8 @@ final public class CustomSlider: UIControl {
             layer.addSublayer(bigPoint)
             layer.addSublayer(smallPoint)
         }
+
+        bringSubviewToFront(thumbImageView)
     }
 
     private func configureLabels() {
@@ -281,6 +314,20 @@ final public class CustomSlider: UIControl {
         }
         let minIndex = diffs.firstIndex(of: diffs.min() ?? minValue) ?? 0
         return values[minIndex]
+    }
+
+    private func thumbOrigin(for value: Int) -> CGPoint {
+        let x = position(for: value) - Constants.thumbSize.width / 2
+        let thumbHeight = Constants.thumbSize.height
+        let trackHeight = Constants.trackHeight
+        let thumbImageDyOffset = Constants.thumbImageDyOffset
+        let y = Constants.trackTopOffset - (thumbHeight + trackHeight) / 2 + thumbImageDyOffset
+        return CGPoint(x: x, y: y)
+    }
+
+    private func updatedThumbFrame() -> CGRect {
+        let thumbFrame = CGRect(origin: thumbOrigin(for: value), size: Constants.thumbSize)
+        return thumbFrame.offsetBy(dx: 0, dy: Constants.thumbImageDyOffset)
     }
 
 }
