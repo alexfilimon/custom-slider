@@ -43,6 +43,7 @@ final public class CustomSlider: UIControl {
     private var thumbImage = UIImage(named: "Group 6.png")
     private var trackLayer = CustomSliderTrackLayer()
     private let thumbImageView = UIImageView()
+    private var canSlide = false
 
     // MARK: - Initialization
 
@@ -161,10 +162,16 @@ final public class CustomSlider: UIControl {
     }
 
     private func handleBeginTracking(with location: CGPoint) -> Bool {
+        // to understand if was touch or pan on endTracking
+        canSlide = thumbImageView.frame.contains(location)
+
         return true
     }
 
     private func handleContinueTracking(with location: CGPoint) -> Bool {
+        guard canSlide else {
+            return false
+        }
 
         let trackContentHorizontalOffset = Constants.trackHeight / 2 + Constants.trackHorizontalOffset
         let trackContentWidth = bounds.width - trackContentHorizontalOffset * 2
@@ -182,7 +189,25 @@ final public class CustomSlider: UIControl {
         return true
     }
 
-    private func handleEndTracking(with location: CGPoint?) {}
+    private func handleEndTracking(with location: CGPoint?) {
+        guard !canSlide, let x = location?.x else {
+            return
+        }
+
+        let trackContentHorizontalOffset = Constants.trackHeight / 2 + Constants.trackHorizontalOffset
+        let trackContentWidth = bounds.width - trackContentHorizontalOffset * 2
+        let newPercentage = (x - trackContentHorizontalOffset) / trackContentWidth
+
+        var newValue = Int(newPercentage * CGFloat(maxValue - minValue)) + minValue
+        newValue = boundValue(newValue)
+        newValue = nearestValue(for: newValue)
+
+        if newValue != value {
+            value = newValue
+            animateChanging()
+            sendActions(for: .valueChanged)
+        }
+    }
 
     private func boundValue(_ value: Int) -> Int {
         return min(max(value, minValue), maxValue)
