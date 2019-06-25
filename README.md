@@ -395,5 +395,3 @@ private func handleEndTracking(with location: CGPoint?) {
 ![](img/ezgif-5-b9e44fa47d85.gif)
 
 Финальный результат можно найти [здесь](https://github.com/alexfilimon/custom-slider/commit/83443814ba6e826c271d85b91e29eb0a304f8dfb)
-
-#работа/surf/unicredit
