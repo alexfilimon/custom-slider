@@ -33,7 +33,7 @@ final public class CustomSliderTrackLayer: CALayer {
         let path = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius)
         context.addPath(path.cgPath)
 
-        context.setFillColor(Constants.grayColor.cgColor)
+        context.setFillColor(GlobalConstants.grayColor.cgColor)
         context.fillPath()
 
         // draw blue rect
@@ -45,7 +45,7 @@ final public class CustomSliderTrackLayer: CALayer {
         let otherPath = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius)
         context.addPath(otherPath.cgPath)
 
-        context.setFillColor(Constants.blueColor.cgColor)
+        context.setFillColor(GlobalConstants.blueColor.cgColor)
         context.fillPath()
     }
 
@@ -58,7 +58,15 @@ final public class CustomSliderTrackLayer: CALayer {
     }
 
     override public func action(forKey event: String) -> CAAction? {
-        return nil
+        guard event == #keyPath(CustomSliderTrackLayer.percentage) else {
+            return super.action(forKey: event)
+        }
+
+        let animation = CABasicAnimation(keyPath: event)
+        animation.duration = GlobalConstants.animationDuration
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        animation.fromValue = presentation()?.value(forKey: event)
+        return animation
     }
 
 }
